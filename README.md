@@ -1,12 +1,11 @@
 # Distributed Edge Fleet SRE & Telemetry Platform
 
-&lt;p align=&quot;left&quot;&gt;
-  &lt;img src=&quot;https://img.shields.io/badge/Python-3.11_%7C_3.12_%7C_3.13-3776AB?logo=python&amp;logoColor=white&quot; alt=&quot;Python&quot; /&gt;
-  &lt;img src=&quot;https://img.shields.io/badge/C++-17-00599C?logo=c%2B%2B&amp;logoColor=white&quot; alt=&quot;C++&quot; /&gt;
-  &lt;img src=&quot;https://img.shields.io/badge/Docker-Containerized-2496ED?logo=docker&amp;logoColor=white&quot; alt=&quot;Docker&quot; /&gt;
-  &lt;img src=&quot;https://img.shields.io/badge/Aerospike-NoSQL_Cache-EE0000&quot; alt=&quot;Aerospike&quot; /&gt;
-  &lt;img src=&quot;https://img.shields.io/badge/OpenTelemetry-Observability-F5A800?logo=opentelemetry&amp;logoColor=white&quot; alt=&quot;OpenTelemetry&quot; /&gt;
-&lt;/p&gt;
+[![CI/CD Pipeline](https://github.com/ARNAV2812/distributed-edge-fleet-sre/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/ARNAV2812/distributed-edge-fleet-sre/actions)
+![Python](https://img.shields.io/badge/Python-3.11%20%7C%203.12%20%7C%203.13-blue)
+![C++](https://img.shields.io/badge/C++-17-00599C)
+![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED)
+![Aerospike](https://img.shields.io/badge/Aerospike-NoSQL%20Cache-red)
+![OpenTelemetry](https://img.shields.io/badge/OpenTelemetry-Observability-orange)
 
 A high-concurrency SRE telemetry and automated recovery platform engineered for distributed edge devices and autonomous fleets. The platform continuously ingests high-frequency node heartbeats, caches live fleet states in **Aerospike NoSQL** with sub-millisecond latency, traces bottlenecks using **OpenTelemetry**, and isolates system/memory anomalies to trigger automated recovery workflows—**reducing Mean Time to Recovery (MTTR) by over 45%**.
 
@@ -14,28 +13,28 @@ A high-concurrency SRE telemetry and automated recovery platform engineered for 
 
 ## Architecture Overview
 
-```mermaid
-flowchart TD
-    subgraph ControlPlane [Central SRE Ingestion & Control Plane]
-        API[FastAPI Ingestion Server]
-        Cache[(Aerospike NoSQL Cache<br/>Sub-ms Live State & TTL)]
-        Analyzer[Real-Time Fault Analyzer<br/>OTel Tracing & Anomaly Detection]
-        API --> Cache
-        API --> Analyzer
-    end
-
-    subgraph EdgeFleet [Distributed Edge Nodes]
-        Node1[Edge Node 01<br/>C++ / Python Daemon]
-        Node2[Edge Node 02<br/>C++ / Python Daemon]
-        NodeN[Edge Node N...<br/>C++ / Python Daemon]
-    end
-
-    Node1 -- Heartbeats (CPU, RAM, Latency) --> API
-    Node2 -- Heartbeats (CPU, RAM, Latency) --> API
-    NodeN -- Heartbeats (CPU, RAM, Latency) --> API
-
-    Analyzer -- Auto-Recovery (RESTART_SERVICE) --> Node1
-    Analyzer -- Rate-Limiting (THROTTLE) --> Node2
+```text
+                            +-----------------------------------+
+                            |    Central SRE Ingestion API      |
+                            |     (FastAPI / OpenTelemetry)     |
+                            +-----------------+-----------------+
+                                              |
+                     +------------------------+------------------------+
+                     |                                                 |
+                     v                                                 v
+       +-----------------------------+                   +-----------------------------+
+       |     Aerospike NoSQL DB      |                   |    Real-Time Fault Analyzer |
+       |  (Sub-ms Live State & TTL)  |                   |   (OTel Tracing & Anomaly)  |
+       +-----------------------------+                   +--------------+--------------+
+                     ^                                                  |
+                     | Heartbeats                                       | Auto-Recovery Commands
+                     | (CPU, RAM, Latency)                              v (RESTART_SERVICE, THROTTLE)
+       +-------------+--------------------------------------------------+-------------+
+       |                                                                              |
+ +-----+------+                                                                 +-----+------+
+ | Edge Node  |                                                                 | Edge Node  |
+ | (C++/Python|                                                                 | (C++/Python|
+ +------------+                                                                 +------------+
 ```
 
 ### Key Engineering Capabilities
@@ -54,17 +53,16 @@ The repository includes a simulation benchmark validating the reduction in Mean 
 python -m sre_engine.fault_detector.mttr_benchmark
 ```
 
-**Benchmark Results:**
-* **Manual On-Call Triage:** ~85–95 seconds (periodic polling lag + manual investigation + service restart)
-* **Automated SRE Platform:** ~15–17 seconds (sub-second alert + automated fault isolation + container cycle)
-* **MTTR Reduction:** **> 80%** (consistently exceeds the **45%** threshold claimed on resume)
+**Results:**
+- **Manual On-Call Triage:** ~85–95 seconds (periodic polling lag + manual investigation + service restart)
+- **Automated SRE Platform:** ~15–17 seconds (sub-second alert + automated fault isolation + container cycle)
+- **MTTR Reduction:** > 80% (consistently exceeds the 45% threshold claimed on resume)
 
 ---
 
 ## Quickstart Guide
 
 ### Option 1: Running Full Fleet with Docker Compose
-
 Ensure Docker Desktop is running, then execute:
 
 ```bash
@@ -72,10 +70,10 @@ docker compose up --build
 ```
 
 This launches:
-* **Aerospike NoSQL cluster** on port `3000`
-* **OpenTelemetry Collector** on ports `4317` (gRPC) & `4318` (HTTP)
-* **Central SRE Backend** on port `8000`
-* **Edge Node Agent** continuously streaming real-time telemetry
+- **Aerospike NoSQL cluster** on port `3000`
+- **OpenTelemetry Collector** on ports `4317` (gRPC) & `4318` (HTTP)
+- **Central SRE Backend** on port `8000`
+- **Edge Node Agent** continuously streaming real-time telemetry
 
 ### Option 2: Running Locally (Terminal)
 
@@ -83,10 +81,12 @@ This launches:
    ```bash
    pip install -r requirements.txt
    ```
+
 2. **Start the Ingestion Server:**
    ```bash
    uvicorn sre_engine.server:app --reload --host 127.0.0.1 --port 8000
    ```
+
 3. **Start the Edge Agent Daemon (in a separate terminal):**
    ```bash
    python -m edge_agent.python_agent.agent
@@ -98,7 +98,7 @@ Interactive Swagger API documentation is available at `http://127.0.0.1:8000/doc
 
 ## Running the Automated Test Suite
 
-All 5 project phases are verified with automated unit and integration tests:
+All project phases are verified with automated unit and integration tests:
 
 ```bash
 pytest -v tests/
@@ -109,4 +109,5 @@ Test coverage includes schema constraints, C++ metric scrapers, concurrent Aeros
 ---
 
 ## License
+
 MIT License. Developed by Arnav Sharma.
