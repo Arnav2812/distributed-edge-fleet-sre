@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # 1. Aerospike NoSQL Cache
+  aerospike:
+    image: aerospike/aerospike-server:latest
+    container_name: sre-aerospike
+    ports:
+      - "3000:3000"
+    environment:
+      - NAMESPACE=test
+    networks:
+      - sre-network
+
+  # 2. OpenTelemetry Collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    container_name: sre-otel-collector
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./docker/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
+    ports:
+      - "4317:4317" # OTLP gRPC receiver
+      - "4318:4318" # OTLP HTTP receiver
+      - "8888:8888" # Collector telemetry metrics
+    networks:
+      - sre-network
+
+  # 3. Central SRE Telemetry & Ingestion Backend
+  sre-backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: sre-backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - aerospike
+      - otel-collector
+    environment:
+      - AEROSPIKE_HOST=aerospike
+      - AEROSPIKE_PORT=3000
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+    networks:
+      - sre-network
+
+  # 4. Simulated Edge Node Agent
+  edge-agent-node-01:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: sre-edge-node-01
+    depends_on:
+      - sre-backend
+    environment:
+      - NODE_ID=edge-node-noida-01
+      - BACKEND_URL=http://sre-backend:8000
+    command: ["python", "-m", "edge_agent.python_agent.agent"]
+    networks:
+      - sre-network
+
+networks:
+  sre-network:
+    driver: bridge
